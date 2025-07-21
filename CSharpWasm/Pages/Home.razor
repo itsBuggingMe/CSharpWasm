@@ -1,0 +1,73 @@
+﻿@page "/"
+
+@using System.Runtime.InteropServices
+@using CSharpWasm.Components
+@using CSharpWasm.Services
+
+@inject ICSharpProvider CSharpProvider
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<PageTitle>CodeRunner</PageTitle>
+
+<CSharpTextArea DataString="@DataString" CompilationOccured="@Run"></CSharpTextArea>
+
+<div class="output-container" style="border-color: @(_compileSuccess && !_hasException ? "#98d9ac" : "#bd6060")">
+    @if (_runResult is null)
+    {
+        <div>Loading...</div>
+    }
+    else if(_compileSuccess)
+    {   
+        foreach(string line in _runResult)
+        {
+            <div>@line</div>
+        }
+    }
+    else
+    {
+        foreach (Diagnostic d in _diagnostics)
+        {
+            <div>@d.Descriptor.Id: @d.GetMessage()</div>
+        }
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "code")]
+    public string? DataString { get; set; }
+
+    private bool _compileSuccess;
+    private bool _hasException;
+    private string[]? _runResult = null;
+
+    private int _textVersion;
+
+    private IEnumerable<Diagnostic> _diagnostics = [];
+
+    private readonly object[] _mainArguments = new object[] { Array.Empty<string>() };
+
+    private void Run(CSharpCompilationResult result)
+    {
+        _compileSuccess = result.Success;
+        _diagnostics = result.Diagnostics;
+
+        if (_compileSuccess && result is { OutputAssembly: { EntryPoint: { } } })
+        {
+            StringWriter stringWriter = new StringWriter();
+            Console.SetOut(stringWriter);
+            try
+            {
+                _hasException = false;
+                result.OutputAssembly.EntryPoint.Invoke(null, _mainArguments);
+                _runResult = stringWriter.ToString().Split(Environment.NewLine);
+            }
+            catch (Exception e)
+            {
+                _hasException = true;
+                _runResult = [(e.InnerException ?? e).ToString()];
+            }
+        }
+
+        StateHasChanged();
+    }
+}

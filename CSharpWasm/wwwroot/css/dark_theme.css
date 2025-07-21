@@ -1,0 +1,173 @@
+﻿/*
+
+    Based off of https://source.dot.net/#Microsoft.CodeAnalysis.Workspaces/Classification/ClassificationTypeNames.cs
+
+*/
+
+.comment {
+    color: #57a64a
+}
+
+/* Code in preprocessor directives that aren't active. */
+.excluded-code {
+    color: #9b9b9b;
+}
+
+.identifier {
+    color: #dcdcdc;
+}
+
+.keyword {
+    color: #569cd6;
+}
+
+.keyword---control {
+    color: #d8a0df;
+}
+
+.number {
+    color: #b5cea8;
+}
+
+.operator {
+    color: #b4b4b4;
+}
+
+.operator---overloaded {
+    color: #dcdcaa;
+}
+
+.preprocessor-keyword {
+    color: #9b9b9b;
+}
+
+.string {
+    color: #d39679
+}
+
+.whitespace {
+
+}
+
+/* Text is used to fill in gaps where the classifer doesn't know. */
+.text {
+    color: #dcdcdc;
+}
+
+/* */
+
+/* Skip additive classifications */
+
+/* */
+
+.preprocessor-text {
+    color: #dcdcdc;
+}
+
+.punctuation {
+    color: #dcdcdc;
+}
+
+.string---verbatim {
+    color: #d39679;
+}
+
+.string---escape-character {
+    color: #ffd68f;
+}
+
+/* */
+
+.class-name, .record-class-name, .delegate-name {
+    color: #4dc9b0;
+}
+
+.enum-name {
+    color: #b8d7a3;
+}
+
+.interface-name {
+    color: #b8d7a3;
+}
+
+/* Genuinely have no idea when this is used. */
+.module-name {
+    color: #dcdcdc;
+}
+
+.struct-name, .record-struct-name {
+    color: #86c691;
+}
+
+.type-parameter-name {
+    color: #b8d7a3;
+}
+
+/* */
+
+/* Ignore test code stuff */
+
+/* */
+
+.field-name, .enum-member-name, .constant-name, .property-name, .event-name, .namespace-name, .label-name {
+    color: #dcdcdc;
+}
+
+.local-name, .parameter-name {
+    color: #9cdcfe;
+}
+
+.method-name, .extension-method-name {
+    color: #dcdcaa;
+}
+
+/* Not going to do everything else in specific. Too lazy. */
+
+.xml-doc-comment---attribute-name,
+    .xml-doc-comment---attribute-quotes,
+    .xml-doc-comment---attribute-value,
+    .xml-doc-comment---cdata-section,
+    .xml-doc-comment---comment,
+    .xml-doc-comment---delimiter,
+    .xml-doc-comment---entity-reference,
+    .xml-doc-comment---name,
+    .xml-doc-comment---processing-instruction,
+    .xml-doc-comment---text,
+    .xml-literal---attribute-name,
+    .xml-literal---attribute-quotes,
+    .xml-literal---attribute-value,
+    .xml-literal---cdata-section,
+    .xml-literal---comment,
+    .xml-literal---delimiter,
+    .xml-literal---embedded-expression,
+    .xml-literal---entity-reference,
+    .xml-literal---name,
+    .xml-literal---processing-instruction,
+    .xml-literal---text {
+    color: #608b4e;
+}
+
+/* */
+
+.regex---comment,
+    .regex---character-class,
+    .regex---anchor,
+    .regex---quantifier,
+    .regex---grouping,
+    .regex---alternation,
+    .regex---text,
+    .regex---self-escaped-character,
+    .regex---other-escape,
+    .json---comment,
+    .json---number,
+    .json---string,
+    .json---keyword,
+    .json---text,
+    .json---operator,
+    .json---punctuation,
+    .json---array,
+    .json---object,
+    .json---property-name,
+    .json---constructor-name {
+    color: #d39679;
+}

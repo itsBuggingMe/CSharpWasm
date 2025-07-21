@@ -1,0 +1,147 @@
+﻿@using System.Runtime.InteropServices
+@using CSharpWasm.Services;
+
+@inject ICSharpProvider CSharpProvider
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<div class="syntax-container">
+
+    <textarea id="input-text" @oninput="OnTextChanged" class="code-text" spellcheck="false" selectionStart="_cursorPosition">@RawText</textarea>
+    <script src="js/tab.js"></script>
+    @{
+        int startIndex = 0;
+    }
+    <pre class="highlighted-code">
+        @foreach (var (text, usedClass) in _classifiedSpans)
+        {
+            @WriteSyntaxSpan(ref startIndex, text, usedClass)
+        }
+    </pre>
+
+</div>
+
+@code {
+    [Parameter]
+    public string? DataString { get; set; }
+    [Parameter]
+    public bool Executable { get; set; } = true;
+    [Parameter]
+    public bool? AutoResizing { get; set; } = true;
+    [Parameter]
+    public EventCallback<string> TextUpdated { get; set; }
+    [Parameter]
+    public EventCallback<CSharpCompilationResult> CompilationOccured { get; set; }
+    [Parameter]
+    public string RawText { get; set; } = string.Empty;
+
+    private List<(string Text, string SyntaxHints)> _classifiedSpans = [];
+    private readonly Dictionary<TextSpan, DiagnosticSeverity> _errorKinds = [];
+
+    private int _textVersion;
+
+    private System.Timers.Timer _dynamicCompileTimer = null!;
+
+    private readonly object[] _mainArguments = new object[] { Array.Empty<string>() };
+
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dynamicCompileTimer = new System.Timers.Timer(1000)
+        {
+            AutoReset = true,
+            Enabled = true,
+        };
+        _dynamicCompileTimer.Elapsed += async (sender, args) => await CreateDiagnostics();
+
+        RawText = Uri.UnescapeDataString(DataString ?? "Console.WriteLine(\"Hello, World\");");
+        await TextUpdated.InvokeAsync(RawText);
+
+        _classifiedSpans.Add((RawText, ClassificationTypeNames.ExcludedCode.Replace(' ', '-')));
+
+        await UpdateSyntaxHighlighting(RawText);
+        _loading = false;
+    }
+
+    private async Task OnTextChanged(ChangeEventArgs e)
+    {
+        string newText = e.Value?.ToString() ?? string.Empty;
+        _textVersion++;
+        _textChanged = true;
+
+        await TextUpdated.InvokeAsync(newText);
+        await UpdateSyntaxHighlighting(newText);
+    }
+
+    private bool _textChanged = true;
+    private CSharpCompilationResult? _lastCompilation;
+
+    private async Task CreateDiagnostics()
+    {
+        CSharpCompilationResult result = await Compile();
+
+        _errorKinds.Clear();
+        foreach (Diagnostic diagnostic in result.Diagnostics)
+        {
+            if (diagnostic.Location.IsInSource)
+            {
+                if (_errorKinds.TryGetValue(diagnostic.Location.SourceSpan, out DiagnosticSeverity severity) && (int)severity > (int)diagnostic.Severity)
+                    continue;
+
+                _errorKinds[diagnostic.Location.SourceSpan] = diagnostic.Severity;
+            }
+        }
+
+        _lastCompilation = result;
+        _textChanged = false;
+
+        StateHasChanged();
+    }
+
+    private async Task UpdateSyntaxHighlighting(string newText)
+    {
+        int version = _textVersion;
+
+        var classifiedSpans = (await CSharpProvider.SyntaxHighlight(newText)).ToList();
+
+        if (version != _textVersion)
+            return;
+
+        int newLineCount = 0;
+        for (; newLineCount < newText.Length; newLineCount++)
+            if (newText[^(newLineCount + 1)] != '\n')
+                break;
+        if (newLineCount != 0)
+        {
+            classifiedSpans.Add((new string('\n', newLineCount + 1), ClassificationTypeNames.WhiteSpace));
+        }
+        RawText = newText;
+
+        _classifiedSpans = classifiedSpans;
+    }
+
+    public MarkupString WriteSyntaxSpan(ref int startIndex, string text, string usedClass)
+    {
+        string style = _errorKinds.TryGetValue(new TextSpan(startIndex, text.Length), out DiagnosticSeverity severity)
+            ? severity != DiagnosticSeverity.Error ? "text-decoration: underline wavy green;" : "text-decoration: underline wavy red;"
+            : string.Empty;
+
+        startIndex += text.Length;
+
+        string markup = $"<span class=\"{usedClass}\" style=\"{style}\">{text}</span>";
+
+        return (MarkupString)markup;
+    }
+
+    public async ValueTask<CSharpCompilationResult> Compile()
+    {
+        if (!_textChanged && _lastCompilation is not null)
+            return _lastCompilation;
+
+        _lastCompilation = await CSharpProvider.Compile(RawText, Executable);
+        _textChanged = false;
+        await CompilationOccured.InvokeAsync(_lastCompilation);
+
+        return _lastCompilation;
+    }
+}
