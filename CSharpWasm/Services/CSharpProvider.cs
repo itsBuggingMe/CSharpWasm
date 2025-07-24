@@ -77,7 +77,7 @@ internal class CSharpProvider : ICSharpProvider, IDisposable
         _generatorDriver = CSharpGeneratorDriver.Create(generatorArray);
     }
 
-    public async Task<IEnumerable<(string Text, string SyntaxHints)>> SyntaxHighlight(string source)
+    public async Task<IEnumerable<(string Text, string SyntaxHints)>> SyntaxHighlight(string source, int start, int length)
     {
         await InitalizeLibrariesAsync();
 
@@ -85,7 +85,7 @@ internal class CSharpProvider : ICSharpProvider, IDisposable
         Document document = _project.AddDocument("Program.cs", source);
         SourceText sourceText = await document.GetTextAsync();
 
-        IEnumerable<ClassifiedSpan> classifiedSpans = await Classifier.GetClassifiedSpansAsync(document, new TextSpan(0, sourceText.Length), CancellationToken.None);
+        IEnumerable<ClassifiedSpan> classifiedSpans = await Classifier.GetClassifiedSpansAsync(document, new TextSpan(start, length), CancellationToken.None);
         var highlighting = FillGaps(sourceText, classifiedSpans);
 
         return highlighting;

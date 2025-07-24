@@ -5,11 +5,7 @@ namespace CSharpWasm;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddCSharpCompiler(this IServiceCollection services)
-    {
-        services.AddScoped<ICSharpProvider, CSharpProvider>();
-        return services;
-    }
+    public static IServiceCollection AddCSharpCompiler(this IServiceCollection services) => services.AddCSharpCompiler(_ => { });
 
     public static IServiceCollection AddCSharpCompiler(this IServiceCollection services, Action<CSharpProviderOptions> configure)
     {
